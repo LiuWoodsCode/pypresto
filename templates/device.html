@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ device.name }} - iDevice Viewer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <main>
+        <a class="back-link" href="{{ url_for('index') }}">Back to devices</a>
+
+        <h1>{{ device.name }}</h1>
+
+        <section class="device-detail">
+            <dl>
+                <div>
+                    <dt>Name</dt>
+                    <dd>{{ device.name }}</dd>
+                </div>
+                <div>
+                    <dt>Model</dt>
+                    <dd>{{ device.model }}</dd>
+                </div>
+                <div>
+                    <dt>Product</dt>
+                    <dd>{{ device.product }}</dd>
+                </div>
+                <div>
+                    <dt>iOS Version</dt>
+                    <dd>{{ device.version }}</dd>
+                </div>
+                <div>
+                    <dt>UDID</dt>
+                    <dd>{{ device.udid }}</dd>
+                </div>
+            </dl>
+        </section>
+    </main>
+</body>
+</html>

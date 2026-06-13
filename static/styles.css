@@ -10,8 +10,46 @@ main {
 }
 
 .device {
+    display: block;
     border: 1px solid #ccc;
+    color: inherit;
     padding: 12px;
     margin-bottom: 10px;
     border-radius: 8px;
+    text-decoration: none;
+}
+
+.device:hover {
+    border-color: #777;
+}
+
+.back-link {
+    color: #2454a6;
+}
+
+.device-detail {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.device-detail dl {
+    margin: 0;
+}
+
+.device-detail div {
+    border-bottom: 1px solid #eee;
+    padding: 10px 0;
+}
+
+.device-detail div:last-child {
+    border-bottom: 0;
+}
+
+.device-detail dt {
+    font-weight: bold;
+}
+
+.device-detail dd {
+    margin: 4px 0 0;
 }

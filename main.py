@@ -1,6 +1,6 @@
 import asyncio
 
-from flask import Flask, render_template
+from flask import Flask, abort, render_template
 from pymobiledevice3.usbmux import list_devices
 from pymobiledevice3.lockdown import create_using_usbmux
 
@@ -9,6 +9,23 @@ app = Flask(__name__)
 @app.route("/")
 def index():
     return render_template("index.html", devices=asyncio.run(get_devices_info()))
+
+
+@app.route("/devices/<udid>")
+def device_detail(udid):
+    device = asyncio.run(get_device_info(udid))
+    if device is None:
+        abort(404)
+
+    return render_template("device.html", device=device)
+
+
+async def get_device_info(udid):
+    for device in await get_devices_info():
+        if device["udid"] == udid:
+            return device
+
+    return None
 
 
 async def get_devices_info():

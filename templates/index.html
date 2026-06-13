@@ -12,13 +12,13 @@
 
         {% if devices %}
             {% for device in devices %}
-            <section class="device">
+            <a class="device" href="{{ url_for('device_detail', udid=device.udid) }}">
                 <b>Name:</b> {{ device.name }}<br>
                 <b>Model:</b> {{ device.model }}<br>
                 <b>Product:</b> {{ device.product }}<br>
                 <b>iOS Version:</b> {{ device.version }}<br>
                 <b>UDID:</b> {{ device.udid }}
-            </section>
+            </a>
             {% endfor %}
         {% else %}
             <p>No devices connected.</p>
