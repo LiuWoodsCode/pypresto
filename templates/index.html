@@ -10,17 +10,30 @@
     <main>
         <h1>Connected iDevices</h1>
 
-        {% if devices %}
+        <div id="devices">
+            {% if devices %}
             {% for device in devices %}
-            <a class="device" href="{{ url_for('device_detail', udid=device.udid) }}">
-                <b>Name:</b> {{ device.name }}<br>
-                <b>Product:</b> {{ device.product }}<br>
-                Running OS {{ device.version }}<br>
-            </a>
+                {% if device.disabled %}
+                <section class="device device-disabled">
+                    <div class="warning-banner">{{ device.warning }}</div>
+                    <div class="device-content">
+                        <b>Name:</b> {{ device.name }}<br>
+                        <b>Product:</b> {{ device.product }}<br>
+                        Running OS {{ device.version }}<br>
+                    </div>
+                </section>
+                {% else %}
+                <a class="device" href="{{ url_for('device_detail', udid=device.udid) }}">
+                    <b>Name:</b> {{ device.name }}<br>
+                    <b>Product:</b> {{ device.product }}<br>
+                    Running OS {{ device.version }}<br>
+                </a>
+                {% endif %}
             {% endfor %}
-        {% else %}
+            {% else %}
             <p>No devices connected.</p>
-        {% endif %}
+            {% endif %}
+        </div>
     </main>
 </body>
 </html>

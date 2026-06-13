@@ -1,31 +1,31 @@
-import asyncio
+import logging
 
-from flask import Flask, abort, render_template
+from flask import Flask, abort, jsonify, render_template
 from pymobiledevice3.usbmux import list_devices
 from pymobiledevice3.lockdown import create_using_usbmux
 
+from healthcheck import get_device, get_devices, start_background_healthcheck
+
 app = Flask(__name__)
+logging.basicConfig(level=logging.INFO)
 
 @app.route("/")
 def index():
-    return render_template("index.html", devices=asyncio.run(get_devices_info()))
+    return render_template("index.html", devices=get_devices())
+
+
+@app.route("/api/devices")
+def api_devices():
+    return jsonify({"devices": get_devices()})
 
 
 @app.route("/devices/<udid>")
 def device_detail(udid):
-    device = asyncio.run(get_device_info(udid))
+    device = get_device(udid)
     if device is None:
         abort(404)
 
     return render_template("device.html", device=device)
-
-
-async def get_device_info(udid):
-    for device in await get_devices_info():
-        if device["udid"] == udid:
-            return device
-
-    return None
 
 
 async def get_devices_info():
@@ -71,4 +71,5 @@ async def get_devices_info():
     return devices_info
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    start_background_healthcheck(get_devices_info)
+    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)

@@ -12,7 +12,10 @@
 
         <h1>{{ device.name }}</h1>
 
-        <section class="device-detail">
+        <section class="device-detail{% if device.disabled %} device-disabled{% endif %}">
+            {% if device.disabled %}
+            <div class="warning-banner">{{ device.warning }}</div>
+            {% endif %}
             <dl>
                 <div>
                     <dt>Name</dt>

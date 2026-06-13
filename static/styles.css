@@ -13,14 +13,41 @@ main {
     display: block;
     border: 1px solid #ccc;
     color: inherit;
-    padding: 12px;
     margin-bottom: 10px;
     border-radius: 8px;
+    overflow: hidden;
+    padding: 12px;
     text-decoration: none;
 }
 
 .device:hover {
     border-color: #777;
+}
+
+.device-disabled {
+    background: #f5f5f5;
+    color: #666;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+.device-disabled:hover {
+    border-color: #ccc;
+}
+
+.device-content {
+    padding: 12px;
+}
+
+.device.device-disabled {
+    padding: 0;
+}
+
+.warning-banner {
+    background: #9f1d1d;
+    color: #fff;
+    font-weight: bold;
+    padding: 10px 12px;
 }
 
 .back-link {
@@ -30,6 +57,15 @@ main {
 .device-detail {
     border: 1px solid #ccc;
     border-radius: 8px;
+    overflow: hidden;
+    padding: 16px;
+}
+
+.device-detail.device-disabled {
+    padding: 0;
+}
+
+.device-detail.device-disabled dl {
     padding: 16px;
 }
 
