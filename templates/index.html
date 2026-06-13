@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>iDevice Viewer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <main>
+        <h1>Connected iDevices</h1>
+
+        {% if devices %}
+            {% for device in devices %}
+            <section class="device">
+                <b>Name:</b> {{ device.name }}<br>
+                <b>Model:</b> {{ device.model }}<br>
+                <b>Product:</b> {{ device.product }}<br>
+                <b>iOS Version:</b> {{ device.version }}<br>
+                <b>UDID:</b> {{ device.udid }}
+            </section>
+            {% endfor %}
+        {% else %}
+            <p>No devices connected.</p>
+        {% endif %}
+    </main>
+</body>
+</html>

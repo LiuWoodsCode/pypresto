@@ -1,54 +1,14 @@
 import asyncio
 
-from flask import Flask, render_template_string
+from flask import Flask, render_template
 from pymobiledevice3.usbmux import list_devices
 from pymobiledevice3.lockdown import create_using_usbmux
 
 app = Flask(__name__)
 
-HTML = """
-<!DOCTYPE html>
-<html>
-<head>
-    <title>iDevice Viewer</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 40px auto;
-        }
-
-        .device {
-            border: 1px solid #ccc;
-            padding: 12px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-        }
-    </style>
-</head>
-<body>
-    <h1>Connected iDevices</h1>
-
-    {% if devices %}
-        {% for device in devices %}
-        <div class="device">
-            <b>Name:</b> {{ device.name }}<br>
-            <b>Model:</b> {{ device.model }}<br>
-            <b>Product:</b> {{ device.product }}<br>
-            <b>iOS Version:</b> {{ device.version }}<br>
-            <b>UDID:</b> {{ device.udid }}
-        </div>
-        {% endfor %}
-    {% else %}
-        <p>No devices connected.</p>
-    {% endif %}
-</body>
-</html>
-"""
-
 @app.route("/")
 def index():
-    return render_template_string(HTML, devices=asyncio.run(get_devices_info()))
+    return render_template("index.html", devices=asyncio.run(get_devices_info()))
 
 
 async def get_devices_info():
