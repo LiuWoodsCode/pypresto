@@ -1,3 +1,5 @@
+import asyncio
+
 from flask import Flask, render_template_string
 from pymobiledevice3.usbmux import list_devices
 from pymobiledevice3.lockdown import create_using_usbmux
@@ -46,12 +48,17 @@ HTML = """
 
 @app.route("/")
 def index():
+    return render_template_string(HTML, devices=asyncio.run(get_devices_info()))
+
+
+async def get_devices_info():
     devices_info = []
 
     try:
-        for device in list_devices():
+        for device in await list_devices():
+            lockdown = None
             try:
-                lockdown = create_using_usbmux(device.serial)
+                lockdown = await create_using_usbmux(device.serial)
 
                 values = lockdown.all_values
 
@@ -63,8 +70,6 @@ def index():
                     "udid": device.serial,
                 })
 
-                lockdown.close()
-
             except Exception as e:
                 devices_info.append({
                     "name": "Error",
@@ -73,6 +78,9 @@ def index():
                     "version": "",
                     "udid": device.serial,
                 })
+            finally:
+                if lockdown is not None:
+                    await lockdown.close()
 
     except Exception as e:
         devices_info.append({
@@ -83,7 +91,7 @@ def index():
             "udid": "",
         })
 
-    return render_template_string(HTML, devices=devices_info)
+    return devices_info
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
