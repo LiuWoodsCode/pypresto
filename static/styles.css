@@ -177,11 +177,66 @@ button:disabled {
     margin: 4px 0 0;
 }
 
+.device-tabs {
+    margin-top: 16px;
+}
+
+.tab-input {
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}
+
+.tab-list {
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+}
+
+.tab-label {
+    border: 1px solid transparent;
+    border-radius: 6px 6px 0 0;
+    color: var(--muted-foreground);
+    cursor: pointer;
+    margin-bottom: -1px;
+    min-height: 40px;
+    padding: 10px 14px;
+}
+
+.tab-label:hover {
+    color: var(--foreground);
+}
+
+.tab-panel {
+    display: none;
+}
+
+#tab-overview:checked ~ .tab-list label[for="tab-overview"],
+#tab-battery:checked ~ .tab-list label[for="tab-battery"],
+#tab-power:checked ~ .tab-list label[for="tab-power"] {
+    background: var(--surface);
+    border-color: var(--border);
+    border-bottom-color: var(--surface);
+    color: var(--foreground);
+    font-weight: bold;
+}
+
+#tab-overview:checked ~ .tab-overview,
+#tab-battery:checked ~ .tab-battery,
+#tab-power:checked ~ .tab-power {
+    display: block;
+}
+
 .device-panel {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 8px;
-    margin-top: 16px;
     padding: 16px;
 }
 
@@ -314,5 +369,14 @@ button:disabled {
     .power-action-buttons form,
     .power-action-buttons button {
         width: 100%;
+    }
+
+    .tab-list {
+        gap: 0;
+    }
+
+    .tab-label {
+        flex: 1 0 auto;
+        text-align: center;
     }
 }

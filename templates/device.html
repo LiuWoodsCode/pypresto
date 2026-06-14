@@ -20,113 +20,128 @@
         <p class="status-message status-error">{{ action_error }}</p>
         {% endif %}
 
-        <section class="device-detail{% if device.disabled %} device-disabled{% endif %}">
-            {% if device.disabled %}
-            <div class="warning-banner">{{ device.warning }}</div>
-            {% endif %}
-            <dl>
-                <div>
-                    <dt>Name</dt>
-                    <dd>{{ device.name }}</dd>
-                </div>
-                <div>
-                    <dt>Model</dt>
-                    <dd>{{ device.model }}</dd>
-                </div>
-                <div>
-                    <dt>Product</dt>
-                    <dd>{{ device.product }}</dd>
-                </div>
-                <div>
-                    <dt>iOS Version</dt>
-                    <dd>{{ device.version }}</dd>
-                </div>
-                <div>
-                    <dt>UDID</dt>
-                    <dd>{{ device.udid }}</dd>
-                </div>
-            </dl>
-        </section>
+        <section class="device-tabs" aria-label="Device sections">
+            <input class="tab-input" type="radio" name="device-tab" id="tab-overview" checked>
+            <input class="tab-input" type="radio" name="device-tab" id="tab-battery">
+            <input class="tab-input" type="radio" name="device-tab" id="tab-power">
 
-        <section class="device-panel">
-            <div class="panel-header">
-                <div>
-                    <h2>Battery</h2>
-                    {% if battery_error %}
-                    <p>Battery information could not be loaded.</p>
-                    {% elif battery %}
-                    {% else %}
-                    <p>Unavailable while this device is disabled</p>
-                    {% endif %}
-                </div>
+            <div class="tab-list" role="tablist" aria-label="Device sections">
+                <label class="tab-label" for="tab-overview" role="tab">Overview</label>
+                <label class="tab-label" for="tab-battery" role="tab">Battery</label>
+                <label class="tab-label" for="tab-power" role="tab">Power</label>
             </div>
 
-            {% if battery %}
-            {% set level = battery.get("BatteryCurrentCapacity") or battery.get("CurrentCapacity") or battery.get("BatteryLevel") %}
-            <dl class="battery-grid">
-                {% if level is not none %}
-                <div>
-                    <dt>Charge</dt>
-                    <dd>{{ level }}{% if level is number %}%{% endif %}</dd>
+            <section class="tab-panel tab-overview" role="tabpanel">
+                <div class="device-detail{% if device.disabled %} device-disabled{% endif %}">
+                    {% if device.disabled %}
+                    <div class="warning-banner">{{ device.warning }}</div>
+                    {% endif %}
+                    <dl>
+                        <div>
+                            <dt>Name</dt>
+                            <dd>{{ device.name }}</dd>
+                        </div>
+                        <div>
+                            <dt>Model</dt>
+                            <dd>{{ device.model }}</dd>
+                        </div>
+                        <div>
+                            <dt>Product</dt>
+                            <dd>{{ device.product }}</dd>
+                        </div>
+                        <div>
+                            <dt>iOS Version</dt>
+                            <dd>{{ device.version }}</dd>
+                        </div>
+                        <div>
+                            <dt>UDID</dt>
+                            <dd>{{ device.udid }}</dd>
+                        </div>
+                    </dl>
                 </div>
-                {% endif %}
-                {% for key, label in {
-                    "ExternalConnected": "Power Connected",
-                    "IsCharging": "Charging",
-                    "FullyCharged": "Fully Charged",
-                    "BatteryIsCharging": "Battery Charging",
-                    "CycleCount": "Cycle Count",
-                    "DesignCapacity": "Design Capacity",
-                    "NominalChargeCapacity": "Nominal Capacity",
-                    "MaximumCapacityPercent": "Maximum Capacity",
-                    "Temperature": "Temperature"
-                }.items() %}
-                    {% if key in battery %}
+            </section>
+
+            <section class="device-panel tab-panel tab-battery" role="tabpanel">
+                <div class="panel-header">
                     <div>
-                        <dt>{{ label }}</dt>
-                        <dd>{{ battery[key] }}</dd>
+                        <h2>Battery</h2>
+                        {% if battery_error %}
+                        <p>Battery information could not be loaded.</p>
+                        {% elif battery %}
+                        <p>Live diagnostics from the connected device</p>
+                        {% else %}
+                        <p>Unavailable while this device is disabled</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if battery %}
+                {% set level = battery.get("BatteryCurrentCapacity") or battery.get("CurrentCapacity") or battery.get("BatteryLevel") %}
+                <dl class="battery-grid">
+                    {% if level is not none %}
+                    <div>
+                        <dt>Charge</dt>
+                        <dd>{{ level }}{% if level is number %}%{% endif %}</dd>
                     </div>
                     {% endif %}
-                {% endfor %}
-            </dl>
-
-            <details class="raw-details">
-                <summary>Raw battery values</summary>
-                <dl>
-                    {% for key, value in battery | dictsort %}
-                    <div>
-                        <dt>{{ key }}</dt>
-                        <dd>{{ value }}</dd>
-                    </div>
+                    {% for key, label in {
+                        "ExternalConnected": "Power Connected",
+                        "IsCharging": "Charging",
+                        "FullyCharged": "Fully Charged",
+                        "BatteryIsCharging": "Battery Charging",
+                        "CycleCount": "Cycle Count",
+                        "DesignCapacity": "Design Capacity",
+                        "NominalChargeCapacity": "Nominal Capacity",
+                        "MaximumCapacityPercent": "Maximum Capacity",
+                        "Temperature": "Temperature"
+                    }.items() %}
+                        {% if key in battery %}
+                        <div>
+                            <dt>{{ label }}</dt>
+                            <dd>{{ battery[key] }}</dd>
+                        </div>
+                        {% endif %}
                     {% endfor %}
                 </dl>
-            </details>
-            {% elif battery_error %}
-            <p class="inline-error">{{ battery_error }}</p>
-            {% endif %}
-        </section>
 
-        <section class="device-panel">
-            <div class="panel-header">
-                <div>
-                    <h2>Power</h2>
-                    <p>Send power commands to this device</p>
+                <details class="raw-details">
+                    <summary>Raw battery values</summary>
+                    <dl>
+                        {% for key, value in battery | dictsort %}
+                        <div>
+                            <dt>{{ key }}</dt>
+                            <dd>{{ value }}</dd>
+                        </div>
+                        {% endfor %}
+                    </dl>
+                </details>
+                {% elif battery_error %}
+                <p class="inline-error">{{ battery_error }}</p>
+                {% endif %}
+            </section>
+
+            <section class="device-panel tab-panel tab-power" role="tabpanel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Power</h2>
+                        <p>Send power commands to this device</p>
+                    </div>
                 </div>
-            </div>
 
-            <div class="power-action-buttons">
-                {% for action, label in device_power_actions.items() %}
-                <form method="post" action="{{ url_for('run_single_device_action', udid=device.udid, action=action) }}">
-                    <button
-                        type="submit"
-                        {% if device.disabled %}disabled{% endif %}
-                        {% if action != "sleep" %}onclick="return confirm('{{ label }} {{ device.name }}?')"{% endif %}
-                    >
-                        {{ label }}
-                    </button>
-                </form>
-                {% endfor %}
-            </div>
+                <div class="power-action-buttons">
+                    {% for action, label in device_power_actions.items() %}
+                    <form method="post" action="{{ url_for('run_single_device_action', udid=device.udid, action=action) }}">
+                        <button
+                            type="submit"
+                            {% if device.disabled %}disabled{% endif %}
+                            {% if action != "sleep" %}onclick="return confirm('{{ label }} {{ device.name }}?')"{% endif %}
+                        >
+                            {{ label }}
+                        </button>
+                    </form>
+                    {% endfor %}
+                </div>
+            </section>
         </section>
     </main>
 </body>
