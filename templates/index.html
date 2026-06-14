@@ -11,6 +11,37 @@
     <main>
         <h1>Connected iDevices</h1>
 
+        {% set device_actions = device_actions | default({"restart": "Restart", "shutdown": "Shut down", "recovery": "Enter recovery mode"}) %}
+        {% set actionable_devices = devices | selectattr("udid") | rejectattr("disabled") | list %}
+        {% if devices %}
+        <section class="bulk-actions" aria-label="All device actions">
+            <div>
+                <h2>All Devices</h2>
+                <p>{{ actionable_devices | length }} device(s) available</p>
+            </div>
+            <div class="bulk-action-buttons">
+                {% for action, label in device_actions.items() %}
+                <form method="post" action="/api/devices/actions/{{ action }}">
+                    <button
+                        type="submit"
+                        {% if not actionable_devices %}disabled{% endif %}
+                        {% if action != "restart" %}onclick="return confirm('{{ label }} all connected devices?')"{% endif %}
+                    >
+                        {{ label }}
+                    </button>
+                </form>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        {% if action_status %}
+        <p class="status-message">{{ action_status }}</p>
+        {% endif %}
+        {% if action_error %}
+        <p class="status-message status-error">{{ action_error }}</p>
+        {% endif %}
+
         <div id="devices">
             {% if devices %}
             {% for device in devices %}
