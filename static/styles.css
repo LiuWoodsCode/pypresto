@@ -177,6 +177,96 @@ button:disabled {
     margin: 4px 0 0;
 }
 
+.device-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 16px;
+    padding: 16px;
+}
+
+.panel-header {
+    align-items: center;
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.panel-header h2 {
+    font-size: 1rem;
+    margin: 0 0 4px;
+}
+
+.panel-header p {
+    color: var(--muted-foreground);
+    margin: 0;
+}
+
+.battery-grid,
+.raw-details dl {
+    margin: 0;
+}
+
+.battery-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.battery-grid div {
+    border: 1px solid var(--divider);
+    border-radius: 6px;
+    padding: 10px;
+}
+
+.battery-grid dt,
+.raw-details dt {
+    color: var(--muted-foreground);
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+.battery-grid dd,
+.raw-details dd {
+    margin: 4px 0 0;
+    overflow-wrap: anywhere;
+}
+
+.raw-details {
+    margin-top: 14px;
+}
+
+.raw-details summary {
+    color: var(--link);
+    cursor: pointer;
+}
+
+.raw-details div {
+    border-bottom: 1px solid var(--divider);
+    padding: 10px 0;
+}
+
+.raw-details div:last-child {
+    border-bottom: 0;
+}
+
+.inline-error {
+    color: var(--warning);
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.power-action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.power-action-buttons form {
+    margin: 0;
+}
+
 @media (prefers-color-scheme: dark) {
     :root {
         color-scheme: dark;
@@ -212,6 +302,17 @@ button:disabled {
 
     .bulk-action-buttons form,
     .bulk-action-buttons button {
+        width: 100%;
+    }
+
+    .panel-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .power-action-buttons,
+    .power-action-buttons form,
+    .power-action-buttons button {
         width: 100%;
     }
 }
