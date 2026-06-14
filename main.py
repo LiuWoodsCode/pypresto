@@ -1,7 +1,8 @@
 import asyncio
+import json
 import logging
 
-from flask import Flask, abort, jsonify, redirect, render_template, request, url_for
+from flask import Flask, Response, abort, jsonify, redirect, render_template, request, stream_with_context, url_for
 from usb.core import NoBackendError, USBError, find as find_usb_devices
 
 from pymobiledevice3.irecv import APPLE_VENDOR_ID, Mode
@@ -9,6 +10,7 @@ from pymobiledevice3.irecv_devices import IRECV_DEVICES
 from pymobiledevice3.usbmux import list_devices
 from pymobiledevice3.lockdown import create_using_usbmux
 from pymobiledevice3.services.diagnostics import DiagnosticsService
+from pymobiledevice3.services.syslog import SyslogService
 
 from healthcheck import get_device, get_devices, start_background_healthcheck
 
@@ -49,6 +51,25 @@ def index():
 @app.route("/api/devices")
 def api_devices():
     return jsonify({"devices": get_devices()})
+
+
+@app.get("/api/devices/<udid>/syslog")
+def stream_device_syslog(udid):
+    device = get_device(udid)
+    if device is None:
+        abort(404)
+
+    if not _is_actionable_device(device):
+        return jsonify({"error": "This device is not available."}), 400
+
+    return Response(
+        stream_with_context(_stream_syslog_events(udid)),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @app.route("/devices/<udid>")
@@ -183,6 +204,55 @@ async def _get_battery_for_device(device):
     finally:
         if lockdown is not None:
             await lockdown.close()
+
+
+async def _watch_syslog_lines(udid):
+    lockdown = None
+    syslog = None
+
+    try:
+        lockdown = await create_using_usbmux(udid)
+        syslog = SyslogService(lockdown)
+
+        async for line in syslog.watch():
+            yield line
+    finally:
+        if syslog is not None:
+            await syslog.close()
+        if lockdown is not None:
+            await lockdown.close()
+
+
+def _stream_syslog_events(udid):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    watcher = _watch_syslog_lines(udid)
+
+    try:
+        yield _sse_event("status", "Connecting to syslog...")
+
+        while True:
+            try:
+                line = loop.run_until_complete(watcher.__anext__())
+            except StopAsyncIteration:
+                yield _sse_event("status", "Syslog stream ended.")
+                break
+            except Exception as e:
+                app.logger.exception("Failed to stream syslog for %s", udid)
+                yield _sse_event("stream-error", str(e))
+                break
+
+            yield _sse_event("log", line)
+    finally:
+        try:
+            loop.run_until_complete(watcher.aclose())
+        finally:
+            asyncio.set_event_loop(None)
+            loop.close()
+
+
+def _sse_event(event, data):
+    return f"event: {event}\ndata: {json.dumps(data)}\n\n"
 
 
 def _is_actionable_device(device):

@@ -23,11 +23,13 @@
         <section class="device-tabs" aria-label="Device sections">
             <input class="tab-input" type="radio" name="device-tab" id="tab-overview" checked>
             <input class="tab-input" type="radio" name="device-tab" id="tab-battery">
+            <input class="tab-input" type="radio" name="device-tab" id="tab-syslog">
             <input class="tab-input" type="radio" name="device-tab" id="tab-power">
 
             <div class="tab-list" role="tablist" aria-label="Device sections">
                 <label class="tab-label" for="tab-overview" role="tab">Overview</label>
                 <label class="tab-label" for="tab-battery" role="tab">Battery</label>
+                <label class="tab-label" for="tab-syslog" role="tab">Syslog</label>
                 <label class="tab-label" for="tab-power" role="tab">Power</label>
             </div>
 
@@ -116,6 +118,24 @@
                 {% endif %}
             </section>
 
+            <section class="device-panel tab-panel tab-syslog" role="tabpanel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Syslog</h2>
+                        <p id="syslog-status">Stream idle</p>
+                    </div>
+                    <div class="syslog-actions">
+                        <label class="checkbox-control">
+                            <input type="checkbox" id="syslog-autoscroll" checked>
+                            Auto-scroll
+                        </label>
+                        <button type="button" id="syslog-clear">Clear</button>
+                    </div>
+                </div>
+
+                <pre id="syslog-output" class="syslog-output" aria-live="polite"></pre>
+            </section>
+
             <section class="device-panel tab-panel tab-power" role="tabpanel">
                 <div class="panel-header">
                     <div>
@@ -140,5 +160,76 @@
             </section>
         </section>
     </main>
+    <script>
+        (() => {
+            const tab = document.getElementById("tab-syslog");
+            const output = document.getElementById("syslog-output");
+            const status = document.getElementById("syslog-status");
+            const clearButton = document.getElementById("syslog-clear");
+            const autoscroll = document.getElementById("syslog-autoscroll");
+            const streamUrl = "{{ url_for('stream_device_syslog', udid=device.udid) }}";
+            let source = null;
+
+            const setStatus = (message) => {
+                status.textContent = message;
+            };
+
+            const appendLine = (line) => {
+                output.textContent += `${line}\n`;
+                if (autoscroll.checked) {
+                    output.scrollTop = output.scrollHeight;
+                }
+            };
+
+            const stopStream = () => {
+                if (source) {
+                    source.close();
+                    source = null;
+                }
+            };
+
+            const startStream = () => {
+                if (source || !tab.checked) {
+                    return;
+                }
+
+                setStatus("Connecting...");
+                source = new EventSource(streamUrl);
+
+                source.addEventListener("status", (event) => {
+                    setStatus(JSON.parse(event.data));
+                });
+
+                source.addEventListener("log", (event) => {
+                    setStatus("Streaming");
+                    appendLine(JSON.parse(event.data));
+                });
+
+                source.addEventListener("stream-error", (event) => {
+                    setStatus(JSON.parse(event.data));
+                    stopStream();
+                });
+
+                source.addEventListener("error", () => {
+                    setStatus("Stream disconnected");
+                    stopStream();
+                });
+            };
+
+            tab.addEventListener("change", startStream);
+            document.querySelectorAll('input[name="device-tab"]').forEach((input) => {
+                input.addEventListener("change", () => {
+                    if (!tab.checked) {
+                        setStatus("Stream idle");
+                        stopStream();
+                    }
+                });
+            });
+            clearButton.addEventListener("click", () => {
+                output.textContent = "";
+            });
+            window.addEventListener("beforeunload", stopStream);
+        })();
+    </script>
 </body>
 </html>

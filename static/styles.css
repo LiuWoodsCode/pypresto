@@ -239,6 +239,7 @@ button:disabled {
 
 #tab-overview:checked ~ .tab-list label[for="tab-overview"],
 #tab-battery:checked ~ .tab-list label[for="tab-battery"],
+#tab-syslog:checked ~ .tab-list label[for="tab-syslog"],
 #tab-power:checked ~ .tab-list label[for="tab-power"] {
     background: var(--surface);
     border-color: var(--border);
@@ -249,6 +250,7 @@ button:disabled {
 
 #tab-overview:checked ~ .tab-overview,
 #tab-battery:checked ~ .tab-battery,
+#tab-syslog:checked ~ .tab-syslog,
 #tab-power:checked ~ .tab-power {
     display: block;
 }
@@ -338,6 +340,39 @@ button:disabled {
     gap: 8px;
 }
 
+.syslog-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.checkbox-control {
+    align-items: center;
+    color: var(--muted-foreground);
+    display: flex;
+    gap: 6px;
+    min-height: 40px;
+}
+
+.syslog-output {
+    background: #0f1419;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: #d7e2ee;
+    font-family: Consolas, Monaco, "Courier New", monospace;
+    font-size: 0.86rem;
+    line-height: 1.45;
+    margin: 0;
+    min-height: 360px;
+    max-height: 58vh;
+    overflow: auto;
+    padding: 12px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 .special-mode-panel {
     margin-top: 16px;
 }
@@ -391,8 +426,18 @@ button:disabled {
 
     .power-action-buttons,
     .power-action-buttons form,
-    .power-action-buttons button {
+    .power-action-buttons button,
+    .syslog-actions,
+    .syslog-actions button {
         width: 100%;
+    }
+
+    .syslog-actions {
+        align-items: stretch;
+    }
+
+    .checkbox-control {
+        justify-content: center;
     }
 
     .tab-list {
