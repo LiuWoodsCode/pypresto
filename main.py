@@ -2,7 +2,12 @@ import asyncio
 import json
 import logging
 
-from flask import Flask, Response, abort, jsonify, redirect, render_template, request, stream_with_context, url_for
+try:
+    from flask_sock import Sock
+except ImportError:
+    Sock = None
+
+from flask import Flask, abort, jsonify, redirect, render_template, request, url_for
 from usb.core import NoBackendError, USBError, find as find_usb_devices
 
 from pymobiledevice3.irecv import APPLE_VENDOR_ID, Mode
@@ -15,6 +20,7 @@ from pymobiledevice3.services.syslog import SyslogService
 from healthcheck import get_device, get_devices, start_background_healthcheck
 
 app = Flask(__name__)
+sock = Sock(app) if Sock is not None else None
 logging.basicConfig(level=logging.INFO)
 
 DEVICE_ACTIONS = {
@@ -53,23 +59,26 @@ def api_devices():
     return jsonify({"devices": get_devices()})
 
 
-@app.get("/api/devices/<udid>/syslog")
-def stream_device_syslog(udid):
-    device = get_device(udid)
-    if device is None:
-        abort(404)
+if sock is not None:
+    @sock.route("/api/devices/<udid>/syslog")
+    def stream_device_syslog(ws, udid):
+        device = get_device(udid)
+        if device is None:
+            ws.close()
+            return
 
-    if not _is_actionable_device(device):
-        return jsonify({"error": "This device is not available."}), 400
+        if not _is_actionable_device(device):
+            _send_syslog_message(ws, "error", "This device is not available.")
+            ws.close()
+            return
 
-    return Response(
-        stream_with_context(_stream_syslog_events(udid)),
-        mimetype="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "X-Accel-Buffering": "no",
-        },
-    )
+        _stream_syslog_websocket(ws, udid)
+else:
+    @app.get("/api/devices/<udid>/syslog")
+    def stream_device_syslog_dependency_missing(udid):
+        return jsonify({
+            "error": "WebSocket support requires the flask-sock package.",
+        }), 501
 
 
 @app.route("/devices/<udid>")
@@ -223,26 +232,29 @@ async def _watch_syslog_lines(udid):
             await lockdown.close()
 
 
-def _stream_syslog_events(udid):
+def _stream_syslog_websocket(ws, udid):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     watcher = _watch_syslog_lines(udid)
 
     try:
-        yield _sse_event("status", "Connecting to syslog...")
+        _send_syslog_message(ws, "status", "Connecting to syslog...")
 
         while True:
             try:
                 line = loop.run_until_complete(watcher.__anext__())
             except StopAsyncIteration:
-                yield _sse_event("status", "Syslog stream ended.")
+                _send_syslog_message(ws, "status", "Syslog stream ended.")
                 break
             except Exception as e:
                 app.logger.exception("Failed to stream syslog for %s", udid)
-                yield _sse_event("stream-error", str(e))
+                _send_syslog_message(ws, "error", str(e))
                 break
 
-            yield _sse_event("log", line)
+            try:
+                _send_syslog_message(ws, "log", line)
+            except Exception:
+                break
     finally:
         try:
             loop.run_until_complete(watcher.aclose())
@@ -251,8 +263,11 @@ def _stream_syslog_events(udid):
             loop.close()
 
 
-def _sse_event(event, data):
-    return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+def _send_syslog_message(ws, message_type, message):
+    ws.send(json.dumps({
+        "type": message_type,
+        "message": message,
+    }))
 
 
 def _is_actionable_device(device):

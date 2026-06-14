@@ -167,8 +167,8 @@
             const status = document.getElementById("syslog-status");
             const clearButton = document.getElementById("syslog-clear");
             const autoscroll = document.getElementById("syslog-autoscroll");
-            const streamUrl = "{{ url_for('stream_device_syslog', udid=device.udid) }}";
-            let source = null;
+            const streamPath = "/api/devices/{{ device.udid | urlencode }}/syslog";
+            let socket = null;
 
             const setStatus = (message) => {
                 status.textContent = message;
@@ -182,36 +182,47 @@
             };
 
             const stopStream = () => {
-                if (source) {
-                    source.close();
-                    source = null;
+                if (socket) {
+                    socket.close();
+                    socket = null;
                 }
             };
 
             const startStream = () => {
-                if (source || !tab.checked) {
+                if (socket || !tab.checked) {
                     return;
                 }
 
                 setStatus("Connecting...");
-                source = new EventSource(streamUrl);
+                const scheme = window.location.protocol === "https:" ? "wss:" : "ws:";
+                socket = new WebSocket(`${scheme}//${window.location.host}${streamPath}`);
 
-                source.addEventListener("status", (event) => {
-                    setStatus(JSON.parse(event.data));
+                socket.addEventListener("open", () => {
+                    setStatus("Connected");
                 });
 
-                source.addEventListener("log", (event) => {
-                    setStatus("Streaming");
-                    appendLine(JSON.parse(event.data));
+                socket.addEventListener("message", (event) => {
+                    const data = JSON.parse(event.data);
+                    if (data.type === "log") {
+                        setStatus("Streaming");
+                        appendLine(data.message);
+                    } else if (data.type === "error") {
+                        setStatus(data.message);
+                        stopStream();
+                    } else {
+                        setStatus(data.message);
+                    }
                 });
 
-                source.addEventListener("stream-error", (event) => {
-                    setStatus(JSON.parse(event.data));
-                    stopStream();
+                socket.addEventListener("close", () => {
+                    if (socket) {
+                        setStatus("Stream disconnected");
+                        socket = null;
+                    }
                 });
 
-                source.addEventListener("error", () => {
-                    setStatus("Stream disconnected");
+                socket.addEventListener("error", () => {
+                    setStatus("Stream error");
                     stopStream();
                 });
             };
