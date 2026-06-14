@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>{{ device.name }} - DFU - iDevice Viewer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <main>
+        <a class="back-link" href="{{ url_for('index') }}">Back to devices</a>
+
+        <h1>{{ device.name }}</h1>
+
+        {% if action_status %}
+        <p class="status-message">{{ action_status }}</p>
+        {% endif %}
+        {% if action_error %}
+        <p class="status-message status-error">{{ action_error }}</p>
+        {% endif %}
+
+        <section class="device-panel special-mode-panel">
+            <div class="panel-header">
+                <div>
+                    <h2>DFU Mode</h2>
+                </div>
+            </div>
+
+            <dl class="battery-grid">
+                <div>
+                    <dt>Product</dt>
+                    <dd>{{ device.product }}</dd>
+                </div>
+                <div>
+                    <dt>Hardware Model</dt>
+                    <dd>{{ device.model }}</dd>
+                </div>
+                <div>
+                    <dt>ECID</dt>
+                    <dd>{{ device.ecid }}</dd>
+                </div>
+                <div>
+                    <dt>Chip ID</dt>
+                    <dd>{{ device.chip_id }}</dd>
+                </div>
+                <div>
+                    <dt>Board ID</dt>
+                    <dd>{{ device.board_id }}</dd>
+                </div>
+                <div>
+                    <dt>iBoot</dt>
+                    <dd>{{ device.version }}</dd>
+                </div>
+                <div>
+                    <dt>Mode</dt>
+                    <dd>{{ device.mode }}</dd>
+                </div>
+                <div>
+                    <dt>Identifier</dt>
+                    <dd>{{ device.udid }}</dd>
+                </div>
+            </dl>
+        </section>
+    </main>
+</body>
+</html>

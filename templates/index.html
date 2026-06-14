@@ -12,7 +12,7 @@
         <h1>Connected iDevices</h1>
 
         {% set device_actions = device_actions | default({"restart": "Restart", "shutdown": "Shut down", "recovery": "Enter recovery mode"}) %}
-        {% set actionable_devices = devices | selectattr("udid") | rejectattr("disabled") | list %}
+        {% set actionable_devices = devices | selectattr("udid") | rejectattr("disabled") | selectattr("state", "equalto", "normal") | list %}
         {% if devices %}
         <section class="bulk-actions" aria-label="All device actions">
             <div>
@@ -56,9 +56,15 @@
                 </section>
                 {% else %}
                 <a class="device" href="{{ url_for('device_detail', udid=device.udid) }}">
+                    {% if device.state and device.state != "normal" %}
+                    {% endif %}
                     <b>Name:</b> {{ device.name }}<br>
                     <b>Product:</b> {{ device.product }}<br>
+                    {% if device.state and device.state != "normal" %}
+                    Boot state {{ device.version }}<br>
+                    {% else %}
                     Running OS {{ device.version }}<br>
+                    {% endif %}
                 </a>
                 {% endif %}
             {% endfor %}

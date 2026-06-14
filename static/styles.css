@@ -14,6 +14,10 @@
     --success-surface: #eef8f0;
     --success-border: #96c89e;
     --error-surface: #fff1f1;
+    --badge-surface: #eef2ff;
+    --badge-text: #243b7a;
+    --dfu-badge-surface: #fff4df;
+    --dfu-badge-text: #7a4200;
     --button: #1f2933;
     --button-text: #ffffff;
     --button-disabled: #9aa4b2;
@@ -108,6 +112,22 @@ button:disabled {
 
 .device:hover {
     border-color: var(--border-hover);
+}
+
+.state-badge {
+    background: var(--badge-surface);
+    border-radius: 999px;
+    color: var(--badge-text);
+    display: inline-block;
+    font-size: 0.82rem;
+    font-weight: bold;
+    margin: 0 0 8px;
+    padding: 4px 8px;
+}
+
+.state-badge-dfu {
+    background: var(--dfu-badge-surface);
+    color: var(--dfu-badge-text);
 }
 
 .device-disabled {
@@ -316,6 +336,10 @@ button:disabled {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+}
+
+.special-mode-panel {
+    margin-top: 16px;
 }
 
 .power-action-buttons form {

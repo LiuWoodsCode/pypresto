@@ -2,6 +2,10 @@ import asyncio
 import logging
 
 from flask import Flask, abort, jsonify, redirect, render_template, request, url_for
+from usb.core import NoBackendError, USBError, find as find_usb_devices
+
+from pymobiledevice3.irecv import APPLE_VENDOR_ID, Mode
+from pymobiledevice3.irecv_devices import IRECV_DEVICES
 from pymobiledevice3.usbmux import list_devices
 from pymobiledevice3.lockdown import create_using_usbmux
 from pymobiledevice3.services.diagnostics import DiagnosticsService
@@ -53,9 +57,17 @@ def device_detail(udid):
     if device is None:
         abort(404)
 
+    if device.get("template") in ("device_rcm.html", "device_dfu.html"):
+        return render_template(
+            device["template"],
+            device=device,
+            action_status=request.args.get("status"),
+            action_error=request.args.get("error"),
+        )
+
     battery = None
     battery_error = None
-    if device.get("udid") and not device.get("disabled"):
+    if _is_actionable_device(device):
         battery_result = asyncio.run(_get_battery_for_device(device))
         if battery_result["ok"]:
             battery = battery_result["battery"]
@@ -79,7 +91,7 @@ def run_device_action(action):
 
     devices = [
         device for device in get_devices()
-        if device.get("udid") and not device.get("disabled")
+        if _is_actionable_device(device)
     ]
     if not devices:
         return redirect(url_for("index", error="No connected devices available."))
@@ -104,7 +116,7 @@ def run_single_device_action(udid, action):
     if device is None:
         abort(404)
 
-    if not device.get("udid") or device.get("disabled"):
+    if not _is_actionable_device(device):
         return redirect(url_for(
             "device_detail",
             udid=udid,
@@ -173,6 +185,14 @@ async def _get_battery_for_device(device):
             await lockdown.close()
 
 
+def _is_actionable_device(device):
+    return (
+        device.get("udid")
+        and not device.get("disabled")
+        and device.get("state", "normal") == "normal"
+    )
+
+
 async def get_devices_info():
     devices_info = []
 
@@ -190,6 +210,8 @@ async def get_devices_info():
                     "product": values.get("ProductType", "Unknown"),
                     "version": values.get("ProductVersion", "Unknown"),
                     "udid": device.serial,
+                    "state": "normal",
+                    "state_label": "Normal",
                 })
 
             except Exception as e:
@@ -199,6 +221,8 @@ async def get_devices_info():
                     "product": "",
                     "version": "",
                     "udid": device.serial,
+                    "state": "normal",
+                    "state_label": "Normal",
                 })
             finally:
                 if lockdown is not None:
@@ -211,9 +235,110 @@ async def get_devices_info():
             "product": "",
             "version": "",
             "udid": "",
+            "state": "normal",
+            "state_label": "Normal",
         })
 
+    devices_info.extend(get_recovery_dfu_devices_info())
     return devices_info
+
+
+def get_recovery_dfu_devices_info():
+    devices_info = []
+
+    try:
+        usb_devices = find_usb_devices(find_all=True, idVendor=APPLE_VENDOR_ID)
+    except (NoBackendError, USBError):
+        app.logger.debug("Recovery/DFU discovery skipped because no USB backend is available")
+        return devices_info
+
+    for usb_device in usb_devices:
+        mode = Mode.get_mode_from_value(usb_device.idProduct)
+        if mode is None or mode == Mode.WTF_MODE:
+            continue
+
+        try:
+            device_info = _parse_irecv_serial(usb_device.serial_number or "")
+            state = "recovery" if mode.is_recovery else "dfu"
+            state_label = "Recovery" if state == "recovery" else "DFU"
+            ecid = device_info.get("ECID", "")
+            chip_id = _hex_to_int(device_info.get("CPID"))
+            board_id = _hex_to_int(device_info.get("BDID"))
+            known_device = _find_irecv_device(board_id, chip_id)
+            fallback_id = f"{usb_device.bus}-{usb_device.address}-{usb_device.idProduct:04x}"
+            identifier = ecid.lower() if ecid else fallback_id
+
+            devices_info.append({
+                "name": known_device.display_name if known_device else f"iDevice in {state_label}",
+                "model": known_device.hardware_model if known_device else device_info.get("MODEL", "Unknown"),
+                "product": known_device.product_type if known_device else "Unknown",
+                "version": device_info.get("SRTG", state_label),
+                "udid": f"irecv-{identifier}",
+                "ecid": ecid or "Unknown",
+                "chip_id": _format_hex(chip_id),
+                "board_id": _format_hex(board_id),
+                "serial_number": device_info.get("SRNM", "Unknown"),
+                "state": state,
+                "state_label": state_label,
+                "mode": mode.name,
+                "template": "device_rcm.html" if state == "recovery" else "device_dfu.html",
+                "actionable": False,
+            })
+        except (USBError, ValueError) as e:
+            devices_info.append({
+                "name": "iDevice in Recovery/DFU",
+                "model": str(e),
+                "product": "Unknown",
+                "version": "Unknown",
+                "udid": f"irecv-error-{usb_device.bus}-{usb_device.address}",
+                "ecid": "Unknown",
+                "chip_id": "Unknown",
+                "board_id": "Unknown",
+                "serial_number": "Unknown",
+                "state": "recovery_dfu",
+                "state_label": "Recovery/DFU",
+                "mode": "Unknown",
+                "template": "device_rcm.html",
+                "actionable": False,
+            })
+
+    return devices_info
+
+
+def _parse_irecv_serial(serial):
+    device_info = {}
+    for component in serial.split():
+        if ":" not in component:
+            continue
+
+        key, value = component.split(":", 1)
+        if key in ("SRNM", "SRTG") and value.startswith("[") and value.endswith("]"):
+            value = value[1:-1]
+        device_info[key] = value
+    return device_info
+
+
+def _find_irecv_device(board_id, chip_id):
+    if board_id is None or chip_id is None:
+        return None
+
+    for device in IRECV_DEVICES:
+        if device.board_id == board_id and device.chip_id == chip_id:
+            return device
+    return None
+
+
+def _hex_to_int(value):
+    if value is None:
+        return None
+    return int(value, 16)
+
+
+def _format_hex(value):
+    if value is None:
+        return "Unknown"
+    return f"0x{value:x}"
+
 
 if __name__ == "__main__":
     start_background_healthcheck(get_devices_info)
