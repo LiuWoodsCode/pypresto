@@ -1,4 +1,21 @@
+:root {
+    color-scheme: light;
+    --background: #ffffff;
+    --foreground: #1f2933;
+    --muted-foreground: #5f6b7a;
+    --surface: #ffffff;
+    --disabled-surface: #f5f5f5;
+    --border: #cccccc;
+    --border-hover: #777777;
+    --divider: #eeeeee;
+    --link: #2454a6;
+    --warning: #9f1d1d;
+    --warning-text: #ffffff;
+}
+
 body {
+    background: var(--background);
+    color: var(--foreground);
     font-family: Arial, sans-serif;
     margin: 0;
 }
@@ -10,8 +27,9 @@ main {
 }
 
 .device {
+    background: var(--surface);
     display: block;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border);
     color: inherit;
     margin-bottom: 10px;
     border-radius: 8px;
@@ -21,18 +39,18 @@ main {
 }
 
 .device:hover {
-    border-color: #777;
+    border-color: var(--border-hover);
 }
 
 .device-disabled {
-    background: #f5f5f5;
-    color: #666;
+    background: var(--disabled-surface);
+    color: var(--muted-foreground);
     cursor: not-allowed;
     opacity: 0.8;
 }
 
 .device-disabled:hover {
-    border-color: #ccc;
+    border-color: var(--border);
 }
 
 .device-content {
@@ -44,18 +62,19 @@ main {
 }
 
 .warning-banner {
-    background: #9f1d1d;
-    color: #fff;
+    background: var(--warning);
+    color: var(--warning-text);
     font-weight: bold;
     padding: 10px 12px;
 }
 
 .back-link {
-    color: #2454a6;
+    color: var(--link);
 }
 
 .device-detail {
-    border: 1px solid #ccc;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 8px;
     overflow: hidden;
     padding: 16px;
@@ -74,7 +93,7 @@ main {
 }
 
 .device-detail div {
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--divider);
     padding: 10px 0;
 }
 
@@ -88,4 +107,21 @@ main {
 
 .device-detail dd {
     margin: 4px 0 0;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        color-scheme: dark;
+        --background: #101418;
+        --foreground: #e6edf3;
+        --muted-foreground: #a9b5c1;
+        --surface: #161b22;
+        --disabled-surface: #1d232b;
+        --border: #303946;
+        --border-hover: #7d8da1;
+        --divider: #2a323d;
+        --link: #8ab4f8;
+        --warning: #b4232a;
+        --warning-text: #fff7f7;
+    }
 }
